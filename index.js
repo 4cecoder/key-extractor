@@ -1,5 +1,4 @@
 function extractKeyComp(id, js) {
-    alert("hi");
     String.prototype.substringAfter = function substringAfter(toFind) {
         let str = this;
         let index = str.indexOf(toFind);
