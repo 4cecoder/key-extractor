@@ -24,7 +24,6 @@ function extractKeyComp(id, js) {
     }
 
     function getPassword(js) {
-        console.log(js);
         var passVar = js.substringAfter("CryptoJS[")
             .substringBefore("),")
             .substringAfterLast(",");
