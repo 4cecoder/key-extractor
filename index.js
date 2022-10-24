@@ -75,7 +75,7 @@ function extractKeyComp(id, js) {
             if (id == 4) {
                 let funcName = "0x" + js.substringBeforeLast("=($(document)['on']").substringAfterLast("0x");
                 if(funcName == "0x"){
-                    funcName = js.substringBefore("CryptoJS").substringAfterLast("const").substringBefore("=").trim();
+                    funcName = js.substringBefore("CryptoJS[").substringAfterLast("const").substringBefore("=").trim();
                 }
 
                 funcArgs = (js.substringAfter(funcName).substringAfter(","));
