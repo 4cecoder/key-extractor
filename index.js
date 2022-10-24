@@ -68,12 +68,18 @@ function extractKeyComp(id, js) {
         }
 
         var jsEnd = js.substringBefore("jwplayer(").substringBeforeLast("var");
-        var suspiciousPass = jsEnd.substringBeforeLast("'").substringAfterLast("'")
+        var suspiciousPass = jsEnd.substringBeforeLast("'").substringAfterLast("'");
+
         if (suspiciousPass.length < 8) {
             let funcArgs;
             if (id == 4) {
                 let funcName = "0x" + js.substringBeforeLast("=($(document)['on']").substringAfterLast("0x");
+                if(funcName == "0x"){
+                    funcName = js.substringBefore("CryptoJS").substringAfterLast("const").substringBefore("=").trim();
+                }
+
                 funcArgs = (js.substringAfter(funcName).substringAfter(","));
+
                 if (funcArgs[0] == "'") {
                     funcArgs = funcArgs.split("'")[1];
                     return [funcArgs, true];
@@ -95,9 +101,13 @@ function extractKeyComp(id, js) {
                     }
 
                 }
+            
+
             } else {
                 funcArgs = jsEnd.substringAfterLast("(0x").substringBefore(")");
             }
+
+            console.log(funcArgs);
             return [getPasswordFromJS(js, funcArgs), false];
         }
         return [suspiciousPass, true];
