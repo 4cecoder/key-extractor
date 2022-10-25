@@ -23,30 +23,48 @@ function extractKeyComp(id, js) {
         return index == -1 ? "" : str.substring(0, index);
     }
 
-    function findClosingBraces(str){
+    String.prototype.onlyOnce = function substringBeforeLast(substring) {
+        let str = this;
+        return str.lastIndexOf(substring) == str.indexOf(substring);
+    }
+
+    function findClosingBraces(str) {
         let output = "";
         let stack = [];
-        let braces = ["\'","\""];
-        for(let i = 0; i < str.length; i++){
-            output += str[i]; 
+        let braces = ["\'", "\""];
+        for (let i = 0; i < str.length; i++) {
+            output += str[i];
 
-            if(str[i] == "(" && !braces.includes(stack[stack.length - 1])){
+            if (str[i] == "(" && !braces.includes(stack[stack.length - 1])) {
                 stack.push("(");
             }
-            else if(str[i] == ")" && !braces.includes(stack[stack.length - 1])){
+            else if (str[i] == ")" && !braces.includes(stack[stack.length - 1])) {
                 stack.pop();
             }
-            else if(braces.includes(str[i])){
-                if(str[i] == stack[stack.length - 1]){
+            else if (braces.includes(str[i])) {
+                if (str[i] == stack[stack.length - 1]) {
                     stack.pop();
-                }else{
+                } else {
                     stack.push(str[i]);
                 }
             }
 
-            if(stack.length == 0){
+            if (stack.length == 0) {
                 break;
             }
+        }
+
+        return output;
+    }
+
+    function findFirstBrace(str) {
+        let output = "";
+        for (let i = 0; i < str.length; i++) {
+            if (str[i] == "(") {
+                break;
+            }
+            output += str[i];
+
         }
 
         return output;
@@ -74,40 +92,63 @@ function extractKeyComp(id, js) {
             let funcArgs;
             if (id == 4) {
                 let funcName = "0x" + js.substringBeforeLast("=($(document)['on']").substringAfterLast("0x");
-                if(funcName == "0x"){
+                if (funcName == "0x") {
                     funcName = js.substringBefore("CryptoJS[").substringAfterLast("const").substringBefore("=").trim();
                 }
 
-                funcArgs = (js.substringAfter(funcName).substringAfter(","));
+                if (js.onlyOnce(funcName)) {
+                    let otherFuncName = "0x" + js.substringAfter("CryptoJS[").substringBefore("...").substringBeforeLast("=").substringAfterLast("0x");
+                    let otherParams = findClosingBraces(js.substringAfter(otherFuncName));
+                    otherParams = otherParams.split(",");
+                    otherParams[0] = "(\"\"";
+                    let decodeFunc = findFirstBrace(otherParams[1]);
 
-                if (funcArgs[0] == "'") {
-                    funcArgs = funcArgs.split("'")[1];
-                    return [funcArgs, true];
-                } else {
-                    funcArgs = findClosingBraces("(" + js.substringAfter(funcName).substringAfter(",").substringAfter("("));
-                    funcArgs = "(" + funcArgs.substringAfter("(");
-                    if(funcArgs.includes("_0x") && (funcArgs.includes("(_0x") || funcArgs.indexOf("(") == funcArgs.indexOf("('"))){
-                        let tempM = "(" + ((js.substringAfter(funcName)).substringAfter(",").substringAfter("("));
-                        tempM = findClosingBraces(tempM);
-                        tempM = tempM.substring(1, tempM.length - 1);
-
-
-
-                        let decFuncName = "_0x" + tempM.substringAfter("_0x").substringBefore("(");
-                        funcArgs = {
-                            "paramString" : tempM,
-                            "decFuncName" : decFuncName
-                        };
+                    for (let i = 1; i < otherParams.length; i++) {
+                        if (otherParams[i][0] != "'") {
+                            decodeFunc = findFirstBrace(otherParams[i]);
+                        }
                     }
 
+                    otherParams = otherParams.join(",");
+                    otherParams = otherParams.substring(1, otherParams.length - 1);
+                    funcArgs = {
+                        "paramString": otherParams,
+                        "decFuncName": decodeFunc
+                    };
+
+                } else {
+
+                    funcArgs = (js.substringAfter(funcName).substringAfter(","));
+
+
+                    if (funcArgs[0] == "'") {
+                        funcArgs = funcArgs.split("'")[1];
+                        return [funcArgs, true];
+                    } else {
+                        funcArgs = findClosingBraces("(" + js.substringAfter(funcName).substringAfter(",").substringAfter("("));
+                        funcArgs = "(" + funcArgs.substringAfter("(");
+                        if (funcArgs.includes("_0x") && (funcArgs.includes("(_0x") || funcArgs.indexOf("(") == funcArgs.indexOf("('"))) {
+                            let tempM = "(" + ((js.substringAfter(funcName)).substringAfter(",").substringAfter("("));
+                            tempM = findClosingBraces(tempM);
+                            tempM = tempM.substring(1, tempM.length - 1);
+
+
+
+                            let decFuncName = "_0x" + tempM.substringAfter("_0x").substringBefore("(");
+                            funcArgs = {
+                                "paramString": tempM,
+                                "decFuncName": decFuncName
+                            };
+                        }
+
+                    }
                 }
-            
+
 
             } else {
                 funcArgs = jsEnd.substringAfterLast("(0x").substringBefore(")");
             }
 
-            console.log(funcArgs);
             return [getPasswordFromJS(js, funcArgs), false];
         }
         return [suspiciousPass, true];
@@ -119,7 +160,7 @@ function extractKeyComp(id, js) {
 
         var decoderFunName = js.substringBefore("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=").substringBeforeLast("function").substringBeforeLast("function").substringAfterLast("return").trim().split("=")[0];
         var decoderFunPrefix = "function " + decoderFunName;
-        var decoderFunBody = decoderFunPrefix +  "(" + js.substringAfter(decoderFunPrefix + "(");
+        var decoderFunBody = decoderFunPrefix + "(" + js.substringAfter(decoderFunPrefix + "(");
         var decoderFunSuffix = `,${decoderFunName}(`;
         var decoderFunCall = decoderFunSuffix + decoderFunBody
             .substringAfter(decoderFunSuffix)
@@ -136,16 +177,16 @@ function extractKeyComp(id, js) {
 
         script += "\n" + decoderFunBody
         decoderFunc = decoderFunName;
-        if(typeof getKeyArgs == "string"){
+        if (typeof getKeyArgs == "string") {
             script += `\n${decoderFunName}${getKeyArgs}`;
-        }else{
-             
-            script += "\n[";    
-            script += getKeyArgs.paramString.replace(getKeyArgs.decFuncName,decoderFunName);
+        } else {
+
+            script += "\n[";
+            script += getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName);
             script += "].join('');";
         }
         return (script);
     }
-    
+
     return getPassword(js);
 }
