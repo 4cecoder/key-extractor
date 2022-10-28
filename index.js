@@ -73,42 +73,55 @@ function extractKeyComp(id, js) {
     function getPassword(js) {
        
         let regex = /\.\.\..+?=/g;
-        let funcName;
+        let funcName = null;
         while (match = regex.exec(js)) {
-            funcName = "_0x" + js.substring(0, match.index).substringBeforeLast("=").substringAfterLast("_0x");
-            if (!js.onlyOnce(funcName)) {
+            let tempFuncName = "_0x" + js.substring(0, match.index).substringBeforeLast("=").substringAfterLast("_0x");
+            if (!js.onlyOnce(tempFuncName)) {
+                funcName = tempFuncName;
                 break;
             }
         }
+        if(funcName == null){
+            let funcName = js.substringAfter("CryptoJS[").substringBefore(";return").substringAfterLast(",").replace(")","");
+            let otherParams = "["+js.substringAfter(`${funcName}=[`).substringBefore("('')")+"('')";
+            otherParams = otherParams.split(",");
+            let decodeFunc = null;
+            for (let i = 1; i < otherParams.length; i++) {
+                if (otherParams[i][0] == "_") {
+                    decodeFunc = findFirstBrace(otherParams[i]);
+                    break;
+                }
+            }
+            otherParams = otherParams.join(",");
+            funcArgs = {
+                "paramString": otherParams,
+                "decFuncName": decodeFunc,
+                "justEval" : true
+            };
+        }else{
 
 
+            let otherParams = findClosingBraces(js.substringAfter(funcName));
+            otherParams = otherParams.split(",");
+            let decodeFunc = findFirstBrace(otherParams[0]);
 
-        let otherParams = findClosingBraces(js.substringAfter(funcName));
-        otherParams = otherParams.split(",");
-        let decodeFunc = findFirstBrace(otherParams[0]);
+            for (let i = 1; i < otherParams.length; i++) {
+                if (otherParams[i][0] != "'") {
+                    decodeFunc = findFirstBrace(otherParams[i]);
+                }
+            }
 
-        for (let i = 1; i < otherParams.length; i++) {
-            if (otherParams[i][0] != "'") {
-                decodeFunc = findFirstBrace(otherParams[i]);
+            otherParams = otherParams.join(",");
+            otherParams = otherParams.substring(1, otherParams.length - 1);
+            funcArgs = {
+                "paramString": otherParams,
+                "decFuncName": decodeFunc
+            };
+
+            if(id == 6){
+                funcArgs.splice = true;
             }
         }
-
-        console.log(otherParams);
-        otherParams = otherParams.join(",");
-        otherParams = otherParams.substring(1, otherParams.length - 1);
-        funcArgs = {
-            "paramString": otherParams,
-            "decFuncName": decodeFunc
-        };
-
-        if(id == 6){
-            funcArgs.splice = true;
-        }
-
-        
-
-
-
 
         return [getPasswordFromJS(js, funcArgs), false];
     }
@@ -136,9 +149,11 @@ function extractKeyComp(id, js) {
         script += "\n" + decoderFunBody
         decoderFunc = decoderFunName;
 
-        console.log(getKeyArgs);
         if (typeof getKeyArgs == "string") {
             script += `\n${decoderFunName}${getKeyArgs}`;
+        } else if(getKeyArgs.justEval){
+            script += `var ${getKeyArgs.decodeFunc} = ${decoderFunName};`;
+            script += getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName);
         } else {
 
             script += "\nlet tempArray = [";
