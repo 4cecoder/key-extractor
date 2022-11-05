@@ -101,7 +101,7 @@ function extractKeyComp(id, js) {
         }else{
 
 
-            let otherParams = findClosingBraces(js.substringAfter(funcName));
+            let otherParams = findClosingBraces(js.substringAfter(`=${funcName}`));
             otherParams = otherParams.split(",");
             let decodeFunc = findFirstBrace(otherParams[0]);
 
