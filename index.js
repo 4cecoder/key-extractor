@@ -71,7 +71,7 @@ function extractKeyComp(id, js) {
     }
 
     function getPassword(js) {
-       
+
         let regex = /\.\.\..+?=/g;
         let funcName = null;
         while (match = regex.exec(js)) {
@@ -81,9 +81,9 @@ function extractKeyComp(id, js) {
                 break;
             }
         }
-        if(funcName == null){
-            let funcName = js.substringAfter("CryptoJS[").substringBefore(";return").substringAfterLast(",").replace(")","");
-            let otherParams = "["+js.substringAfter(`${funcName}=[`).substringBefore("('')")+"('')";
+        if (funcName == null) {
+            let funcName = js.substringAfter("CryptoJS[").substringBefore(";return").substringAfterLast(",").replace(")", "");
+            let otherParams = "[" + js.substringAfter(`${funcName}=[`).substringBefore("('')") + "('')";
             otherParams = otherParams.split(",");
             let decodeFunc = null;
             for (let i = 1; i < otherParams.length; i++) {
@@ -96,19 +96,24 @@ function extractKeyComp(id, js) {
             funcArgs = {
                 "paramString": otherParams,
                 "decFuncName": decodeFunc,
-                "justEval" : true
+                "justEval": true
             };
-        }else{
+        } else {
 
 
             let otherParams;
-
-            if(id == 4){
+            let concatFunc;
+            if (id == 4) {
                 otherParams = findClosingBraces(js.substringAfter(`${funcName}`));
-            }else{
+            } else {
+                let baseString = js.substringAfter(`${funcName}=(`);
+                concatFunc = findClosingBraces("(" + baseString);
+                otherParams = "eval" + findClosingBraces(baseString.substringAfter("eval"));
+                concatFunc = funcName + "=" + concatFunc + "=>" + otherParams + ";";
+
                 otherParams = findClosingBraces(js.substringAfter(`=${funcName}`));
+
             }
-            
             otherParams = otherParams.split(",");
             let decodeFunc = findFirstBrace(otherParams[0]);
 
@@ -125,8 +130,10 @@ function extractKeyComp(id, js) {
                 "decFuncName": decodeFunc
             };
 
-            if(id == 6){
+            if (id == 6) {
                 funcArgs.splice = true;
+                funcArgs.concatFunc = concatFunc;
+                funcArgs.concatFuncName = funcName;
             }
         }
 
@@ -158,26 +165,29 @@ function extractKeyComp(id, js) {
 
         if (typeof getKeyArgs == "string") {
             script += `\n${decoderFunName}${getKeyArgs}`;
-        } else if(getKeyArgs.justEval){
+        } else if (getKeyArgs.justEval) {
             script += `var ${getKeyArgs.decodeFunc} = ${decoderFunName};`;
             script += getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName);
         } else {
+            if (getKeyArgs.splice) {
+                script += getKeyArgs.concatFunc;
+                script += getKeyArgs.concatFuncName + `(${getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName)})`;
 
-            script += "\nlet tempArray = [";
-            script += getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName);
-            script += "];";
+                console.log(getKeyArgs.concatFunc + getKeyArgs.concatFuncName + `(${getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName)})`);
 
-            if(getKeyArgs.splice){
-                script += "tempArray.splice(tempArray[tempArray.length - 1],1);";
-                script += "tempArray.pop();";
+            } else {
+                script += "\nlet tempArray = [";
+                script += getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName);
+                script += "];";
+                script += "tempArray.join('')";
             }
-            script += "tempArray.join('')";
 
         }
 
 
         return (script);
     }
+
 
     return getPassword(js);
 }
