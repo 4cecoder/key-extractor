@@ -32,6 +32,8 @@ function extractKeyComp(id, js) {
         let output = "";
         let stack = [];
         let braces = ["\'", "\""];
+        let escapedBraces = ["\\\'","\\\""];
+        let lastChar = "";
         for (let i = 0; i < str.length; i++) {
             output += str[i];
 
@@ -42,19 +44,27 @@ function extractKeyComp(id, js) {
                 stack.pop();
             }
             else if (braces.includes(str[i])) {
-                if (str[i] == stack[stack.length - 1]) {
-                    stack.pop();
-                } else {
-                    stack.push(str[i]);
+                if(lastChar == "\\" && escapedBraces.includes(`\\${str[i]}`)){
+
+                }else{
+                    if (str[i] == stack[stack.length - 1]) {
+                        stack.pop();
+                    } else {
+                        stack.push(str[i]);
+                    }
                 }
             }
-
+            
+            lastChar = str[i];
+                
+            
+            console.log(stack, str[i] + str[i + 1]);
             if (stack.length == 0) {
                 break;
             }
         }
-
         return output;
+
     }
 
     function findFirstBrace(str) {
