@@ -130,13 +130,13 @@ function extractKeyComp(id, js) {
 
                 let replaceFunc = findClosingBraces(transformFuncTemp.substringAfter(transformFunc));
                 let replaceFuncTemp = replaceFunc.split(",");
-                transformDecodeFunc = null;
-                for (let i = 0; i < replaceFuncTemp.length; i++) {
-                    if (replaceFuncTemp[i][0] == "_") {
-                        transformDecodeFunc = findFirstBrace(replaceFuncTemp[i]);
-                        break;
-                    }
-                }
+                transformDecodeFunc = "_0x" + findFirstBrace(replaceFunc.substringAfter("_0x"));
+                // for (let i = 0; i < replaceFuncTemp.length; i++) {
+                //     if (replaceFuncTemp[i][0] == "_") {
+                //         transformDecodeFunc = findFirstBrace(replaceFuncTemp[i]);
+                //         break;
+                //     }
+                // }
 
                 transformFunc = transformFunc + replaceFunc;
 
