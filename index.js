@@ -85,6 +85,7 @@ function extractKeyComp(id, js) {
 
         let regex = /\.\.\..+?=/g;
         let funcName = null;
+        let transformDecodeFunc;
         while (match = regex.exec(js)) {
             let tempFuncName = "_0x" + js.substring(0, match.index).substringBeforeLast("=").substringAfterLast("_0x");
             if (!js.onlyOnce(tempFuncName)) {
@@ -129,13 +130,13 @@ function extractKeyComp(id, js) {
 
                 let replaceFunc = findClosingBraces(transformFuncTemp.substringAfter(transformFunc));
                 let replaceFuncTemp = replaceFunc.split(",");
-                // let decodeFunc = null;
-                // for (let i = 0; i < replaceFuncTemp.length; i++) {
-                //     if (replaceFuncTemp[i][0] == "_") {
-                //         decodeFunc = findFirstBrace(replaceFuncTemp[i]);
-                //         break;
-                //     }
-                // }
+                transformDecodeFunc = null;
+                for (let i = 0; i < replaceFuncTemp.length; i++) {
+                    if (replaceFuncTemp[i][0] == "_") {
+                        transformDecodeFunc = findFirstBrace(replaceFuncTemp[i]);
+                        break;
+                    }
+                }
 
                 transformFunc = transformFunc + replaceFunc;
 
@@ -146,7 +147,7 @@ function extractKeyComp(id, js) {
                 otherParams = otherParams.substring(1, otherParams.length - 1);
                 funcArgs = {
                     "paramString": otherParams,
-                    "decFuncName": decodeFunc
+                    "decFuncName": transformDecodeFunc
                 };
                 funcArgs.transform = true;
                 funcArgs.transformFunc = transformFunc;
