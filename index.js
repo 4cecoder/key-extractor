@@ -130,13 +130,15 @@ function extractKeyComp(id, js) {
 
                 let replaceFunc = findClosingBraces(transformFuncTemp.substringAfter(transformFunc));
                 let replaceFuncTemp = replaceFunc.split(",");
-                transformDecodeFunc = "_0x" + findFirstBrace(replaceFunc.substringAfter("_0x"));
-                // for (let i = 0; i < replaceFuncTemp.length; i++) {
-                //     if (replaceFuncTemp[i][0] == "_") {
-                //         transformDecodeFunc = findFirstBrace(replaceFuncTemp[i]);
-                //         break;
-                //     }
-                // }
+
+                let otherParamsTemp = otherParams.split(",");
+                transformDecodeFunc = findFirstBrace(otherParamsTemp[0]);
+
+                for (let i = 1; i < otherParamsTemp.length; i++) {
+                    if (otherParamsTemp[i][0] != "'") {
+                        transformDecodeFunc = findFirstBrace(otherParamsTemp[i]);
+                    }
+                }
 
                 transformFunc = transformFunc + replaceFunc;
 
@@ -151,9 +153,6 @@ function extractKeyComp(id, js) {
                 };
                 funcArgs.transform = true;
                 funcArgs.transformFunc = transformFunc;
-                // funcArgs.splice = false;
-                // funcArgs.concatFunc = concatFunc;
-                // funcArgs.concatFuncName = funcName;
             } else {
                 otherParams = otherParams.split(",");
                 let decodeFunc = findFirstBrace(otherParams[0]);
