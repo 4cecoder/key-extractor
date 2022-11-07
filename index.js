@@ -114,7 +114,7 @@ function extractKeyComp(id, js) {
 
 
             let otherParams;
-            let concatFunc, transformFunc;
+            let concatFunc, transformFunc, keyVarName;
             if (id == 4) {
                 otherParams = findClosingBraces(js.substringAfter(`${funcName}`));
             } else {
@@ -122,14 +122,25 @@ function extractKeyComp(id, js) {
                 // concatFunc = findClosingBraces("(" + baseString);
                 // otherParams = "eval" + findClosingBraces(baseString.substringAfter("eval"));
                 // concatFunc = funcName + "=" + concatFunc + "=>" + otherParams + ";";
-
+                keyVarName = "_0x" + js.substringBefore(`=${funcName}`).substringAfterLast("_0x");
                 otherParams = findClosingBraces(js.substringAfter(`=${funcName}`));
-                let keyVarName = "_0x" + js.substringBefore(`=${funcName}`).substringAfterLast("_0x");
-                let transformFuncTemp = "[" + js.substringAfter(`${keyVarName}[`);
-                transformFunc = findClosingBraces(transformFuncTemp);
+                let temp = js.substringAfter(`${otherParams}`);
+                temp = temp.replace(";return","");
 
-                let replaceFunc = findClosingBraces(transformFuncTemp.substringAfter(transformFunc));
-                let replaceFuncTemp = replaceFunc.split(",");
+                let transformArray = findClosingBraces(temp);
+
+                temp = temp.substringAfter(transformArray);
+
+                let transformName = findClosingBraces(temp);
+                temp = temp.substringAfter(transformName);
+
+
+                let transformDef = findClosingBraces(temp);
+
+
+
+                transformFunc = transformArray + transformName + transformDef;
+
 
                 let otherParamsTemp = otherParams.split(",");
                 transformDecodeFunc = findFirstBrace(otherParamsTemp[0]);
@@ -140,16 +151,14 @@ function extractKeyComp(id, js) {
                     }
                 }
 
-                transformFunc = transformFunc + replaceFunc;
-
-
             }
 
             if (id == 6) {
                 otherParams = otherParams.substring(1, otherParams.length - 1);
                 funcArgs = {
                     "paramString": otherParams,
-                    "decFuncName": transformDecodeFunc
+                    "decFuncName": transformDecodeFunc,
+                    "keyVarName" : keyVarName
                 };
                 funcArgs.transform = true;
                 funcArgs.transformFunc = transformFunc;
@@ -213,7 +222,8 @@ function extractKeyComp(id, js) {
                 script += getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName);
                 script += "];";
                 script += "let key = tempArray.join('');";
-                script += "key" + getKeyArgs.transformFunc.replaceAll(getKeyArgs.decFuncName, decoderFunName);
+                script += getKeyArgs.transformFunc.replaceAll(getKeyArgs.decFuncName, decoderFunName).replaceAll(getKeyArgs.keyVarName, "key");
+                script += ";key";
             } else {
                 script += "\nlet tempArray = [";
                 script += getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName);
