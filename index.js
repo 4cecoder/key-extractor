@@ -141,11 +141,11 @@ function extractKeyComp(id, js) {
 
                 transformFunc = transformArray + transformName + transformDef;
 
-
-                let otherParamsTemp = otherParams.split(",");
+                let otherParamsTemp = otherParams.substring(1, otherParams.length - 1);
+                otherParamsTemp = otherParams.split(",");
                 transformDecodeFunc = findFirstBrace(otherParamsTemp[0]);
 
-                for (let i = 1; i < otherParamsTemp.length; i++) {
+                for (let i = 0; i < otherParamsTemp.length; i++) {
                     if (otherParamsTemp[i][0] != "'") {
                         transformDecodeFunc = findFirstBrace(otherParamsTemp[i]);
                     }
@@ -163,19 +163,18 @@ function extractKeyComp(id, js) {
                 funcArgs.transform = true;
                 funcArgs.transformFunc = transformFunc;
             } else {
+                otherParams = otherParams.substring(1, otherParams.length - 1);
                 otherParams = otherParams.split(",");
                 let decodeFunc = findFirstBrace(otherParams[0]);
-
-                for (let i = 1; i < otherParams.length; i++) {
+                for (let i = 0; i < otherParams.length; i++) {
                     if (otherParams[i][0] != "'") {
                         decodeFunc = findFirstBrace(otherParams[i]);
                     }
                 }
 
                 otherParams = otherParams.join(",");
-                otherParams = otherParams.substring(1, otherParams.length - 1);
                 funcArgs = {
-                    "paramString": otherParams,
+                    "paramString": otherParams, 
                     "decFuncName": decodeFunc
                 };
             }
