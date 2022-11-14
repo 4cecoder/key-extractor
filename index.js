@@ -142,7 +142,7 @@ function extractKeyComp(id, js) {
                 transformFunc = transformArray + transformName + transformDef;
 
                 let otherParamsTemp = otherParams.substring(1, otherParams.length - 1);
-                otherParamsTemp = otherParams.split(",");
+                otherParamsTemp = otherParamsTemp.split(",");
                 transformDecodeFunc = findFirstBrace(otherParamsTemp[0]);
 
                 for (let i = 0; i < otherParamsTemp.length; i++) {
