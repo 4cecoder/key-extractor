@@ -219,7 +219,7 @@ function extractKeyComp(id, js) {
             } else if (getKeyArgs.transform) {
                 script += "\nlet tempArray = [";
                 script += getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName);
-                script += "];";
+                script += "].reverse();";
                 script += "let key = tempArray.join('');";
                 script += getKeyArgs.transformFunc.replaceAll(getKeyArgs.decFuncName, decoderFunName).replaceAll(getKeyArgs.keyVarName, "key");
                 script += ";key";
