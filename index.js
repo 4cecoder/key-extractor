@@ -88,11 +88,12 @@ function extractKeyComp(id, js) {
         let transformDecodeFunc;
         while (match = regex.exec(js)) {
             let tempFuncName = "_0x" + js.substring(0, match.index).substringBeforeLast("=").substringAfterLast("_0x");
-            if (!js.onlyOnce(tempFuncName)) {
+            if (js.includes(tempFuncName + "(")) {
                 funcName = tempFuncName;
                 break;
             }
         }
+
         if (funcName == null) {
             let funcName = js.substringAfter("CryptoJS[").substringBefore(";return").substringAfterLast(",").replace(")", "");
             let otherParams = "[" + js.substringAfter(`${funcName}=[`).substringBefore("('')") + "('')";
@@ -239,3 +240,4 @@ function extractKeyComp(id, js) {
 
     return getPassword(js);
 }
+module.exports.execute = extractKeyComp
