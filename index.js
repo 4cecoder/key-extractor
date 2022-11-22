@@ -240,4 +240,3 @@ function extractKeyComp(id, js) {
 
     return getPassword(js);
 }
-module.exports.execute = extractKeyComp
