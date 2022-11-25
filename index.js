@@ -98,6 +98,7 @@ function extractKeyComp(id, js) {
 
 
         let otherParams;
+        let decFuncName2;
         let concatFunc, transformFunc, keyVarName;
         if (id == 4) {
             otherParams = findClosingBraces(js.substringAfter(`${funcName}`));
@@ -110,17 +111,26 @@ function extractKeyComp(id, js) {
 
             let replaceFuncName = "_0x" + js.substringBeforeLast(replaceVar).substringBeforeLast("=").substringAfterLast("_0x").trim();
 
-            let replaceFunc = findClosingBraces(js.substringAfter(findClosingBraces(js.substringAfter(`${replaceFuncName}=${replaceFuncName}`))));
+            let replaceTemp = js.indexOf(`${replaceFuncName}=${replaceFuncName}`);
+            let replaceString = `${replaceFuncName}=${replaceFuncName}` + findClosingBraces(js.substringAfter(`${replaceFuncName}=${replaceFuncName}`));
+            let replaceFunc = findClosingBraces(js.substring(replaceTemp + replaceString.length));
             let decFuncName = "_0x" + replaceFunc.substringAfter("_0x").substringBefore("(");
 
             let keyVar = "_0x" + js.substringBefore(replaceFuncName).substringBeforeLast("=").substringAfterLast("_0x").trim();
             let keyFunc = findClosingBraces("(" + js.substringAfter(keyVar + "("))
-            let keyValue = keyFunc.split(",")[1].substringBefore(")");
+            let keyValue = keyFunc.substringAfter(",");
+            if(keyValue[0] == "'"){
+                keyValue = keyValue.substringBeforeLast(")");
+            }else{
+                keyValue = keyValue.substringBeforeLast(")");
+                decFuncName2 = "_0x" + keyValue.substringAfter("_0x").substringBefore("(");
+            }
 
             funcArgs = {
                 "keyValue": keyValue,
                 "replaceFunc": replaceFunc,
-                "decFuncName": decFuncName
+                "decFuncName": decFuncName,
+                "decFuncName2": decFuncName2
 
             };
 
@@ -183,6 +193,9 @@ function extractKeyComp(id, js) {
                 script += getKeyArgs.concatFunc;
                 script += getKeyArgs.concatFuncName + `(${getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName)})`;
             } else if (getKeyArgs.transform) {
+                if("decFuncName2" in getKeyArgs){
+                    getKeyArgs.keyValue = getKeyArgs.keyValue.replaceAll(getKeyArgs.decFuncName2, decoderFunName);
+                }
                 script += "\n" + getKeyArgs.keyValue + ".replace" + getKeyArgs.replaceFunc.replaceAll(getKeyArgs.decFuncName, decoderFunName);
             } else {
                 script += "\nlet tempArray = [";
