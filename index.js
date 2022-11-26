@@ -109,7 +109,7 @@ function extractKeyComp(id, js) {
             let cryptoFuncName = js.substringBeforeLast(cryptoVar).substringAfterLast("const").substringBefore("=").trim();
             let replaceVar = js.substringAfter(`${cryptoFuncName}(`).substringBefore(")").substringAfter(",");
 
-            let replaceFuncName = "_0x" + js.substringBeforeLast(replaceVar).substringBeforeLast("=").substringAfterLast("_0x").trim();
+            let replaceFuncName = replaceVar;
 
             let replaceTemp = js.indexOf(`${replaceFuncName}=${replaceFuncName}`);
             let replaceString = `${replaceFuncName}=${replaceFuncName}` + findClosingBraces(js.substringAfter(`${replaceFuncName}=${replaceFuncName}`));
