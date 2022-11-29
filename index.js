@@ -208,7 +208,7 @@ function extractKeyComp(id, js) {
         // return;
         let script = "";
         
-        let anonWhileString = "(" + js.substringBefore("while(!![])").substringAfter("(function(");
+        let anonWhileString = "(" + js.substringBefore("while(!![])").substringAfterLast("(function(");
         let anonParam = findClosingBraces(anonWhileString);
         anonWhileString = js.substringAfter(anonParam);
         let anonBody = findClosingBraces(anonWhileString);
