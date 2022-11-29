@@ -168,7 +168,13 @@ function extractKeyComp(id, js) {
             }else{
                 let replaceTemp = js.indexOf(`${replaceFuncName}=`);
                 let jsTemp = js.substring(replaceTemp + `${replaceFuncName}=`.length);
-                keyValue = findClosingBraces(jsTemp);
+                if(jsTemp[0] == "'"){
+                    keyValue = findClosingBraces(jsTemp);
+                }else{
+                    keyValue = jsTemp.substringBefore(")[") + ")";
+                    
+                }
+
                 jsTemp = jsTemp.substring(keyValue.length);
                 let replaceFuncTitle = findClosingBraces(jsTemp);
                 jsTemp = jsTemp.substring(replaceFuncTitle.length);
@@ -177,7 +183,7 @@ function extractKeyComp(id, js) {
             }
             if(keyValue[0] == "'"){
             }else{
-                keyValue = keyValue.substringBeforeLast(")");
+                // keyValue = keyValue.substringBeforeLast(")");
                 decFuncName2 = "_0x" + keyValue.substringAfter("_0x").substringBefore("(");
             }
 
@@ -255,12 +261,18 @@ function extractKeyComp(id, js) {
             } else if (getKeyArgs.transform) {
 
                 let decodeArray = [];
-                for(let decode of getKeyArgs.replaceFunc.split(",")){
+
+                let tempReplaceFunc = getKeyArgs.replaceFunc;
+                if(tempReplaceFunc[0] == "("){
+                    tempReplaceFunc = getKeyArgs.replaceFunc.substring(1);
+                }
+                for(let decode of tempReplaceFunc.split(",")){
                     let k = findFirstBraceEmpty(decode);
                     if(k != ""){
                         decodeArray.push(k);
                     }
                 }
+
 
                 for(let decode of decodeArray){
                     script += getFunction(decode,js) + ";";
