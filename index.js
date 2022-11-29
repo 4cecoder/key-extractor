@@ -258,8 +258,18 @@ function extractKeyComp(id, js) {
                 script += getFunction(getKeyArgs.decFuncName ,js)  + ";";
                 script += "\n" + getKeyArgs.keyValue + ".replace" + getKeyArgs.replaceFunc;
             } else {
+                let decodeArray = [];
+                for(let decode of getKeyArgs.paramString.split(",")){
+                    let k = findFirstBraceEmpty(decode);
+                    if(k != ""){
+                        decodeArray.push(k);
+                    }
+                }
+                for(let decode of decodeArray){
+                    script += getFunction(decode,js) + ";";
+                }
                 script += "\nlet tempArray = [";
-                script += getKeyArgs.paramString.replaceAll(getKeyArgs.decFuncName, decoderFunName);
+                script += getKeyArgs.paramString;
                 script += "];";
                 script += "tempArray.join('')";
             }
