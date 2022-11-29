@@ -156,15 +156,26 @@ function extractKeyComp(id, js) {
             let replaceFuncName = replaceVar;
 
             let replaceTemp = js.indexOf(`${replaceFuncName}=${replaceFuncName}`);
-            let replaceString = `${replaceFuncName}=${replaceFuncName}` + findClosingBraces(js.substringAfter(`${replaceFuncName}=${replaceFuncName}`));
-            let replaceFunc = findClosingBraces(js.substring(replaceTemp + replaceString.length));
-            let decFuncName = "_0x" + replaceFunc.substringAfter("_0x").substringBefore("(");
+            let keyValue, replaceFunc, decFuncName = "";
+            if(replaceTemp > -1){
+                let replaceString = `${replaceFuncName}=${replaceFuncName}` + findClosingBraces(js.substringAfter(`${replaceFuncName}=${replaceFuncName}`));
+                replaceFunc = findClosingBraces(js.substring(replaceTemp + replaceString.length));
+                decFuncName = "_0x" + replaceFunc.substringAfter("_0x").substringBefore("(");
 
-            let keyVar = "_0x" + js.substringBefore(replaceFuncName).substringBeforeLast("=").substringAfterLast("_0x").trim();
-            let keyFunc = findClosingBraces("(" + js.substringAfter(keyVar + "("))
-            let keyValue = keyFunc.substringAfter(",");
+                let keyVar = "_0x" + js.substringBefore(replaceFuncName).substringBeforeLast("=").substringAfterLast("_0x").trim();
+                let keyFunc = findClosingBraces("(" + js.substringAfter(keyVar + "("))
+                keyValue = keyFunc.substringAfter(",");
+            }else{
+                let replaceTemp = js.indexOf(`${replaceFuncName}=`);
+                let jsTemp = js.substring(replaceTemp + `${replaceFuncName}=`.length);
+                keyValue = findClosingBraces(jsTemp);
+                jsTemp = jsTemp.substring(keyValue.length);
+                let replaceFuncTitle = findClosingBraces(jsTemp);
+                jsTemp = jsTemp.substring(replaceFuncTitle.length);
+                replaceFunc = findClosingBraces(jsTemp);
+
+            }
             if(keyValue[0] == "'"){
-                keyValue = keyValue.substringBeforeLast(")");
             }else{
                 keyValue = keyValue.substringBeforeLast(")");
                 decFuncName2 = "_0x" + keyValue.substringAfter("_0x").substringBefore("(");
