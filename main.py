@@ -70,3 +70,38 @@ def extract_key_comp(id, js):
                 break
             output += c
         return output
+    def get_password(js):
+        regex = re.compile(r"\.\.\..+?=")
+        func_name = None
+        func_args = None
+        transform_decode_func = None
+
+        for match in regex.finditer(js):
+            temp_func_name = "_0x" + substring_before_last(js[0:match.start()], "=").split("_0x")[-1]
+            if temp_func_name + "(" in js:
+                func_name = temp_func_name
+                break
+
+        if id == 4:
+            other_params = find_closing_braces(substring_after(js, f"{func_name}"))
+        else:
+        # Additional logic for handling different cases
+            pass
+
+        if id == 6:
+            func_args = {"transform": True}
+        else:
+            other_params = other_params[1:len(other_params) - 1]
+            other_params = other_params.split(",")
+            decode_func = find_first_brace(other_params[0])
+            for param in other_params:
+                if param[0] != "'":
+                    decode_func = find_first_brace(param)
+
+            other_params = ",".join(other_params)
+            func_args = {
+                "paramString": other_params,
+                "decFuncName": decode_func
+            }
+
+        return [get_password_from_js(js, func_args), False]
