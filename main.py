@@ -70,6 +70,7 @@ def extract_key_comp(id, js):
                 break
             output += c
         return output
+    
     def get_password(js):
         regex = re.compile(r"\.\.\..+?=")
         func_name = None
