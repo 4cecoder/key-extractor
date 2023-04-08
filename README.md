@@ -6,10 +6,6 @@ code is now PY PON
 https://www.fmovies.ink/watch-movie/watch-three-days-in-the-woods-2-killin-time-full-95035.9521554
 
 ```bash
-curl -s 'https://www.fmovies.ink/watch-movie/watch-three-days-in-the-woods-2-killin-time-full-95035.9521554' | grep -oP 'https://rabbitstream\.net/js/player/prod/e\d+-player\.min\.js\?v=\d+:1'
-```
-
-```bash
 curl -s 'https://example.com' | grep -oP 'https://rabbitstream\.net/js/player/prod/e\d+-player\.min\.js\?v=\d+:1'
 ```
 
