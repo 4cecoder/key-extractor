@@ -129,24 +129,127 @@ function extractKeyComp(id, js) {
         return string
     }
 
+    function hasChars(source, chars) {
+        return new Set(source.split('').filter(c => chars.includes(c))).size == chars.length;
+    }
+
+    function splitParams(string) {
+        let comma_locations = [0];
+        let parren_stack = [];
+        let quoting = false;
+
+        for (let i = 0; i < string.length; i++) {
+            let found = string.charAt(i);
+            if (found === "'") {
+                quoting = !quoting; /* toggle */
+            }
+            if (quoting) {
+                continue;
+            }
+
+            if (found === '(' || found === '{' || found === '[') {
+                parren_stack.push(found);
+                continue;
+            }
+
+            if (found === ')' || found === '}' || found === ']') {
+                let tmp = parren_stack.pop();
+                if (!tmp) {
+                    throw new Error("Expected openning parenthesis");
+                }
+                switch ([tmp, found].join('')) {
+                    case '()':
+                    case '{}':
+                    case '[]':
+                        continue;
+                    default:
+                        throw new Error(`Unbalanced Parentesis [${tmp}, ${found}]`);
+                }
+            }
+
+            if (parren_stack.length === 0 && found === ',') {
+                comma_locations.push(i);
+                continue;
+            }
+        }
+        comma_locations.push(string.length);
+
+        if (parren_stack.length !== 0) {
+            throw new Error("Unbalanced Parentesis");
+        }
+
+        let captures = [];
+
+        for (let i = 0; i < comma_locations.length - 1; i++) {
+            let c = string.substring(comma_locations[i], comma_locations[i + 1]).trimEnd();
+            if (c.charAt(0) === ',') {
+                c = c.substring(1).trimStart();
+            }
+            captures.push(c);
+        }
+
+        return captures
+    }
+
     function getPassword(js) {
-        // A
-        cryptoVar = js.substringBeforeLast("document").substringAfterLast(",").substringBefore("=");
+        // T0
+        cryptoVar = js.substringBeforeLast("CryptoJS[").substringBeforeLast("document").substringAfterLast(",").substringBefore("=");
                                
-        // A(K,g('SUwdL0Ty','fixRe'))
+        // T0(T,T2('qlzr',tp(0x1751,0xea2),'59','McsaV',gM(0xef8,'g0x$')))
         cryptoFunc = `${cryptoVar}(` + js.substringAfterLast(`=>${cryptoVar}(`).substringBefore("()").substringBeforeLast(",");
                                 
-        // g('SUwdL0Ty','fixRe')
+        // T2('qlzr',tp(0x1751,0xea2),'59','McsaV',gM(0xef8,'g0x$'))
         keyFunc = cryptoFunc.substringAfter(",").substringBeforeLast(")");
 
-        // s=K=>Array['isArray'](K),g=(...K)=>K[QM('!V&v',0x37d)]('')
+        // T1=T=>Array[gh(0x1106,0xe2a)](T),T2=(...T)=>T[gh(0x796,0xf5b)]('')
         keyArray = js.substringAfterLast("CryptoJS[").substringAfterLast("return[];}),").substringBeforeLast("...").substringBeforeLast(",");
 
-        // g=(...k)=>K[QM('!V&v', 0x37d)]('')
+        // T2=(...T)=>T[gh(0x796,0xf5b)]('')
         keyArraySplit = keyArray.substringAfterLast("),")
         
-        // QM('!V&v', 0x37d)
+        // gh(0x796,0xf5b)
         keyArrayFunc = keyArray.substringBeforeLast("]").substringAfterLast("[");
+    
+        // 'qlzr',tp(0x1751,0xea2),'59','McsaV',gM(0xef8,'g0x$')
+        keyFuncParams = keyFunc.substringAfter("(").substringBeforeLast(")");
+        
+        // [ "'qlzr'", 'tp(0x1751,0xea2)', "'59'", "'McsaV'", "gM(0xef8,'g0x$')" ]
+        splitKeyParams = splitParams(keyFuncParams);
+
+        console.log(getPasswordFromJs(splitKeyParams, keyArrayFunc));
+    }
+    
+    function getPasswordFromJs(splitKeyParams, keyArrayFunc) {
+        if (keyArrayFunc === "'join'") {
+            
+            return ""
+        } else {
+            for(let i = 0; i < splitKeyParams.length; i++) {
+                const text = splitKeyParams[i]
+                const indexes = [text.indexOf('('), text.indexOf(','), text.indexOf(')')]
+                if (indexes[0] > -1 && indexes[0] < indexes[1] && indexes[1] < indexes[2]) {
+                    keyParentFunc = getFunction(text.substringBefore("("), js, true);
+                    keyConstructFuncName = keyParentFunc.substringAfter("var").substringBefore(";").substringAfter("=").substringBefore("()");
+                    keyConstructFunction = getFunction(keyConstructFuncName, js, true);
+
+                    keyParentFuncBody = keyParentFunc.substringAfter(`${keyConstructFuncName}();`).substringBeforeLast("},");
+                    keyReturnFunc1Name = keyParentFuncBody.substringAfter("function(").substringBefore(",");
+                    keyReturnFunc1Body = getFunction(keyReturnFunc1Name, js, true);
+                    
+                    keyReturnFunc2Name = keyParentFuncBody.substringBefore(`[${keyReturnFunc1Name}]`).substringAfterLast("=");
+                    keyReturnFunc2Body = getFunction(keyReturnFunc2Name, js, true);
+                    
+                    // Eval each key function and return the value individually!
+                    return evalScript(keyReturnFunc2Body + keyReturnFunc1Body + keyConstructFunction + keyParentFunc + `\n${text}`);
+                }
+            }
+            
+            return splitKeyParams.map(x => x.slice(1, -1)).join('');
+        }
+    }
+
+    function evalScript(funcBody) {
+      // TODO: Eval each function passsed seperately
     }
     
     return getPassword(js);
