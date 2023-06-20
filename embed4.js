@@ -1,6 +1,6 @@
 const fs = require("fs");
 
-function extractKeyComp(id, js) {
+function extractKeyComp(js) {
     // #### Helper Functions ####
     /*
     Returns a substring after the first occurence of [toFind].
@@ -129,10 +129,6 @@ function extractKeyComp(id, js) {
         return string
     }
 
-    function hasChars(source, chars) {
-        return new Set(source.split('').filter(c => chars.includes(c))).size == chars.length;
-    }
-
     function splitParams(string) {
         let comma_locations = [0];
         let parren_stack = [];
@@ -220,9 +216,35 @@ function extractKeyComp(id, js) {
     }
     
     function getPasswordFromJs(splitKeyParams, keyArrayFunc) {
+        let outputString = '';
+
         if (keyArrayFunc === "'join'") {
+            for(let i = 0; i < splitKeyParams.length; i++) {
+                const text = splitKeyParams[i]
+                const indexes = [text.indexOf('('), text.indexOf(','), text.indexOf(')')]
+                if (indexes[0] > -1 && indexes[0] < indexes[1] && indexes[1] < indexes[2]) {
+                    keyParentFunc = getFunction(text.substringBefore("("), js, true);
+                    keyConstructFuncName = keyParentFunc.substringAfter("var").substringBefore(";").substringAfter("=").substringBefore("()");
+                    keyConstructFunction = getFunction(keyConstructFuncName, js, true);
+
+                    keyParentFuncBody = keyParentFunc.substringAfter(`${keyConstructFuncName}();`).substringBeforeLast("},");
+                    keyReturnFunc1Name = keyParentFuncBody.substringAfter("function(").substringBefore(",");
+                    keyReturnFunc1Body = getFunction(keyReturnFunc1Name, js, true);
+                    
+                    keyReturnFunc2Name = keyParentFuncBody.substringBefore(`[${keyReturnFunc1Name}]`).substringAfterLast("=");
+                    keyReturnFunc2Body = getFunction(keyReturnFunc2Name, js, true);
+                    
+                    // Eval each k)ey function and return the value individually!
+                    const outputValue = evalScript(keyReturnFunc2Body + keyReturnFunc1Body + keyConstructFunction + keyParentFunc + `\n${text}`);
+                    outputString += outputValue;
+                }
+            }
             
-            return ""
+            if (outputString != '') {
+              console.log(outputString);
+            } else {
+              return splitKeyParams.map(x => x.slice(1, -1)).join('');
+            }
         } else {
             for(let i = 0; i < splitKeyParams.length; i++) {
                 const text = splitKeyParams[i]
@@ -240,7 +262,8 @@ function extractKeyComp(id, js) {
                     keyReturnFunc2Body = getFunction(keyReturnFunc2Name, js, true);
                     
                     // Eval each key function and return the value individually!
-                    return evalScript(keyReturnFunc2Body + keyReturnFunc1Body + keyConstructFunction + keyParentFunc + `\n${text}`);
+                    const outputValue = evalScript(keyReturnFunc2Body + keyReturnFunc1Body + keyConstructFunction + keyParentFunc + `\n${text}`);
+                    outputString += outputValue;
                 }
             }
             
@@ -249,13 +272,18 @@ function extractKeyComp(id, js) {
     }
 
     function evalScript(funcBody) {
-      // TODO: Eval each function passsed seperately
+      try {
+        return eval(funcBody);
+      } catch (error) {
+        console.error('Error occurred during script evaluation:', error);
+        return undefined;
+      }
     }
-    
+
     return getPassword(js);
 }
 
-fs.readFile('player.js', 'utf8', function(err, data) {
-    console.log(extractKeyComp(4, data));
+fs.readFile('player2.js', 'utf8', function(err, data) {
+    console.log(extractKeyComp(data));
 });
 
