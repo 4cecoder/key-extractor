@@ -187,6 +187,15 @@ function extractKeyComp(js) {
         return captures
     }
 
+    function evalScript(funcBody) {
+      try {
+        return eval(funcBody);
+      } catch (error) {
+        console.error('Error occurred during script evaluation:', error);
+        return undefined;
+      }
+    }
+   
     function getPassword(js) {
         // T0
         cryptoVar = js.substringBeforeLast("CryptoJS[").substringBeforeLast("document").substringAfterLast(",").substringBefore("=");
@@ -216,8 +225,6 @@ function extractKeyComp(js) {
     }
     
     function getPasswordFromJs(splitKeyParams, keyArrayFunc) {
-        let outputString = '';
-
         if (keyArrayFunc === "'join'") {
             for(let i = 0; i < splitKeyParams.length; i++) {
                 const text = splitKeyParams[i]
@@ -234,18 +241,30 @@ function extractKeyComp(js) {
                     keyReturnFunc2Name = keyParentFuncBody.substringBefore(`[${keyReturnFunc1Name}]`).substringAfterLast("=");
                     keyReturnFunc2Body = getFunction(keyReturnFunc2Name, js, true);
                     
-                    // Eval each k)ey function and return the value individually!
                     const outputValue = evalScript(keyReturnFunc2Body + keyReturnFunc1Body + keyConstructFunction + keyParentFunc + `\n${text}`);
-                    outputString += outputValue;
+                    splitKeyParams[i] = outputValue;
                 }
             }
             
-            if (outputString != '') {
-              console.log(outputString);
-            } else {
-              return splitKeyParams.map(x => x.slice(1, -1)).join('');
-            }
+            return splitKeyParams.map(x => x.slice(1, -1)).join('');
         } else {
+            arrayParentFunc = getFunction(keyArrayFunc.substringBefore("("), js, true);
+            arrayConstructFuncName = arrayParentFunc.substringAfter("var").substringBefore(";").substringAfter("=").substringBefore("()");
+            arrayConstructFunction = getFunction(arrayConstructFuncName, js, true);
+
+            arrayParentFuncBody = arrayParentFunc.substringAfter(`${arrayConstructFuncName}();`).substringBeforeLast("},");
+            arrayReturnFunc1Name = arrayParentFuncBody.substringAfter("function(").substringBefore(",");
+            arrayReturnFunc1Body = getFunction(arrayReturnFunc1Name, js, true);
+
+            arrayReturnFunc2Name = arrayParentFuncBody.substringBefore(`[${arrayReturnFunc1Name}]`).substringAfterLast("=");
+            arrayReturnFunc2Body = getFunction(arrayReturnFunc2Name, js, true);
+
+            const outputValue1 = evalScript(arrayReturnFunc2Body + arrayReturnFunc1Body + arrayConstructFunction + arrayParentFunc + `\n${keyArrayFunc}`);
+            keyArrayPart1 = keyArraySplit.substringBefore(keyArrayFunc);
+            keyArrayPart2 = keyArraySplit.substringAfter(keyArrayFunc);
+            console.log(keyArrayPart1 + outputValue1.replace(/[\r\n]/g, '') + keyArrayPart2 + '');
+
+
             for(let i = 0; i < splitKeyParams.length; i++) {
                 const text = splitKeyParams[i]
                 const indexes = [text.indexOf('('), text.indexOf(','), text.indexOf(')')]
@@ -261,29 +280,20 @@ function extractKeyComp(js) {
                     keyReturnFunc2Name = keyParentFuncBody.substringBefore(`[${keyReturnFunc1Name}]`).substringAfterLast("=");
                     keyReturnFunc2Body = getFunction(keyReturnFunc2Name, js, true);
                     
-                    // Eval each key function and return the value individually!
-                    const outputValue = evalScript(keyReturnFunc2Body + keyReturnFunc1Body + keyConstructFunction + keyParentFunc + `\n${text}`);
-                    outputString += outputValue;
+                    const outputValue2 = evalScript(keyReturnFunc2Body + keyReturnFunc1Body + keyConstructFunction + keyParentFunc + `\n${text}`);
+                    splitKeyParams[i] = outputValue2;
                 }
             }
-            
+
             return splitKeyParams.map(x => x.slice(1, -1)).join('');
         }
     }
 
-    function evalScript(funcBody) {
-      try {
-        return eval(funcBody);
-      } catch (error) {
-        console.error('Error occurred during script evaluation:', error);
-        return undefined;
-      }
-    }
 
     return getPassword(js);
 }
 
-fs.readFile('player2.js', 'utf8', function(err, data) {
+fs.readFile('player.js', 'utf8', function(err, data) {
     console.log(extractKeyComp(data));
 });
 
